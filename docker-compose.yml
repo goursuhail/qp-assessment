@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: grocery-app
+    restart: always
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    depends_on:
+      database:
+        condition: service_healthy  # Ensures the database is ready before starting
+    networks:
+      - grocery-network
+
+  database:
+    image: postgres:15-alpine
+    container_name: grocery-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password  # Consider using Docker secrets in production
+      POSTGRES_DB: grocery
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - grocery-network
+
+volumes:
+  pgdata:
+
+networks:
+  grocery-network:
+    driver: bridge
